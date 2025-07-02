@@ -1,95 +1,47 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import ContestsTable from '@/components/ContestsTable';
+import StatsCards from '@/components/StatsCards';
+import TimelineBarChart from '@/components/TimelineBarChart';
+import AwardsPieChart from '@/components/AwardsPieChart';
+import { fetchContestsFromSheet } from '@/lib/googleSheet';
 
-export default function Home() {
+export const revalidate = 0;
+
+export default async function DashboardPage() {
+  const contests = await fetchContestsFromSheet();
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+    <main className="container-fluid p-4">
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>Dashboard</h2>
+        <div className="d-flex align-items-center">
+          <span className="me-2 text-secondary">Hoàng Gia Huy</span>
+          <img src="https://scontent.fsgn15-1.fna.fbcdn.net/v/t39.30808-6/480960624_675682554814151_8091216706953034584_n.jpg?stp=dst-jpg_tt6&cstp=mx1080x1080&ctp=s1080x1080&_nc_cat=110&ccb=1-7&_nc_sid=127cfc&_nc_ohc=77Np5iq6OLUQ7kNvwH7-FFY&_nc_oc=Adl68PPJYuhCS_Sui6qimqg5heBz8y6yfhX7NGwhqIYeRJ-mbgrP3m8oZ-283Vy7tzgVPKO62a1tS6w01MdVfs--&_nc_zt=23&_nc_ht=scontent.fsgn15-1.fna&_nc_gid=86E5uXjt8IF5dv9oB1fAQw&oh=00_AfMVSyGvbxuydkf1zSRtIyiNa1XKP5IOtzBDfgx_Mi2fvg&oe=6869B13F" className="rounded-circle" width={40} height={40} />
         </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </div>
+
+      {/* Stats Cards */}
+      <StatsCards data={contests} />
+
+      {/* Charts nhỏ lại, cùng hàng */}
+      <div className="row g-4 mb-4">
+        <div className="col-md-6 col-lg-6">
+          <TimelineBarChart data={contests} small />
+        </div>
+        <div className="col-md-6 col-lg-6">
+          <AwardsPieChart data={contests} small />
+        </div>
+      </div>
+
+      {/* Table: chiếm trọn chiều ngang, có phân trang */}
+      <div className="card mb-4">
+        <div className="card-header bg-white border-bottom">
+          <strong>Thông tin cuộc thi</strong>
+        </div>
+        <div className="card-body p-0">
+          <ContestsTable data={contests} />
+        </div>
+      </div>
+    </main>
   );
 }
