@@ -25,18 +25,30 @@ export default function ContestsTable({ data }: Props) {
   ];
 
   // Badge trạng thái
-  function renderStatus(status: string) {
-    const s = status?.toLowerCase();
-    if (s.includes('đã khen thưởng')) return <span className="badge badge-modern bg-success">Đã khen thưởng</span>;
-    if (s.includes('đang phê duyệt')) return <span className="badge badge-modern bg-warning">Đang phê duyệt</span>;
-    if (s.includes('chưa khen thưởng')) return <span className="badge badge-modern bg-danger">Chưa khen thưởng</span>;
-    return <span className="badge badge-modern bg-secondary">{status}</span>;
+function renderStatus(status: string) {
+  const s = (status || '').toLowerCase();
+  if (s.includes('đã khen thưởng')) return <span className="badge badge-modern bg-success">Đã khen thưởng</span>;
+  if (s.includes('đang phê duyệt') || s.includes('đang xét')) {
+    return (
+      <span
+        className="badge badge-modern"
+        style={{
+          background: 'linear-gradient(90deg, #facc15 0%, #fbbf24 100%)',
+          color: '#fff'
+        }}
+      >
+        Đang xét
+      </span>
+    );
   }
+  if (s.includes('chưa khen thưởng')) return <span className="badge badge-modern bg-danger">Chưa khen thưởng</span>;
+  return <span className="badge badge-modern bg-secondary">{status || 'Không rõ'}</span>;
+}
 
   return (
     <div className="modern-table-outer">
       <div className="modern-table-header px-4 pt-4 pb-2">
-        <h4 className="fw-bold mb-1" style={{ color: '#2563eb', letterSpacing: 1 }}>Thông tin cuộc thi</h4>
+        <h4 className="fw-bold mb-1" style={{ color: '#2563eb', letterSpacing: 1 }}>Quản lí dự án NCKH</h4>
         <div className="text-secondary" style={{ fontSize: 15 }}>
           Danh sách các đề tài, thành viên, chủ nhiệm và trạng thái khen thưởng.
         </div>
@@ -51,6 +63,7 @@ export default function ContestsTable({ data }: Props) {
               <th>Chủ nhiệm</th>
               <th>Thời gian</th>
               <th>Giải thưởng</th>
+              <th>Đạt giải</th>
               <th>Trạng thái</th>
               <th className="rounded-end">Minh chứng</th>
             </tr>
@@ -58,19 +71,20 @@ export default function ContestsTable({ data }: Props) {
           <tbody>
             {pagedData.length === 0 && (
               <tr>
-                <td colSpan={8} className="text-center py-4">Không có dữ liệu.</td>
+                <td colSpan={9} className="text-center py-4">Không có dữ liệu.</td>
               </tr>
             )}
             {pagedData.map((r, i) => (
               <tr key={i} className={rowColors[i % rowColors.length]}>
-                <td className="fw-bold text-primary">{r.STT}</td>
-                <td style={{ maxWidth: 180 }}>{r['Tên đề tài']}</td>
-                <td style={{ maxWidth: 120 }}>{r['Thành viên']}</td>
-                <td>{r['Chủ nhiệm']}</td>
-                <td>{r['Thời gian']}</td>
-                <td style={{ maxWidth: 140 }}>{r['Giải thưởng tham gia']}</td>
+                <td className="fw-bold text-primary">{r.STT || ''}</td>
+                <td style={{ maxWidth: 180 }}>{r['Tên đề tài'] || ''}</td>
+                <td style={{ maxWidth: 300 }}>{r['Thành viên'] || ''}</td>
+                <td>{r['Chủ nhiệm'] || ''}</td>
+                <td>{r['Thời gian'] || ''}</td>
+                <td style={{ maxWidth: 140 }}>{r['Giải thưởng tham gia'] || ''}</td>
+                <td>{r['Đạt giải'] || ''}</td>
                 <td>{renderStatus(r['Xét khen thưởng'])}</td>
-                <td>{r['Minh chứng']}</td>
+                <td>{r['Minh chứng'] || ''}</td>
               </tr>
             ))}
           </tbody>

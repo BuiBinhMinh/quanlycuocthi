@@ -5,6 +5,7 @@ export type Contest = {
   'Chủ nhiệm': string;
   'Thời gian': string;
   'Giải thưởng tham gia': string;
+  'Đạt giải': string;
   'Xét khen thưởng': string;
   'Minh chứng': string;
 };

@@ -1,15 +1,19 @@
 'use client';
-import { Contest } from '@/lib/googleSheet';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Contest } from '@/lib/types';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-interface Props { data: Contest[], small?: boolean }
+interface Props {
+  data: Contest[];
+  small?: boolean;
+}
 
 export default function AwardsPieChart({ data, small }: Props) {
+  // Đếm số lượng theo trạng thái khen thưởng
   const counts = data.reduce<Record<string, number>>((acc, r) => {
-    const key = r['Xét khen thưởng'];
+    const key = r['Xét khen thưởng'] || 'Không rõ';
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
@@ -17,13 +21,25 @@ export default function AwardsPieChart({ data, small }: Props) {
   const labels = Object.keys(counts);
   const values = labels.map(l => counts[l]);
 
-  // Map trạng thái sang màu
+  // Map trạng thái sang màu (gradient cho "Đang xét"/"Đang phê duyệt")
   const colorMap: Record<string, string> = {
-    'Đã khen thưởng': '#198754',    // xanh lá cây
-    'Đang phê duyệt': '#ffc107',    // vàng
-    'Chưa khen thưởng': '#dc3545'   // đỏ
+    'Đã khen thưởng': '#198754',
+    'Đang phê duyệt': 'gradient-yellow',
+    'Đang xét': 'gradient-yellow',
+    'Chưa khen thưởng': '#dc3545',
+    'Không rõ': '#6c757d'
   };
-  const colors = labels.map(label => colorMap[label] || '#6c757d');
+
+  // Hàm xử lý gradient cho Pie chart (Chart.js không hỗ trợ trực tiếp chuỗi gradient, cần tạo canvas gradient)
+  function getColor(label: string, ctx: CanvasRenderingContext2D) {
+    if (label === 'Đang phê duyệt' || label === 'Đang xét') {
+      const gradient = ctx.createLinearGradient(0, 0, 120, 0);
+      gradient.addColorStop(0, '#facc15');
+      gradient.addColorStop(1, '#fbbf24');
+      return gradient;
+    }
+    return colorMap[label] || '#6c757d';
+  }
 
   // Responsive height
   const chartHeight = small
@@ -53,7 +69,11 @@ export default function AwardsPieChart({ data, small }: Props) {
               labels,
               datasets: [{
                 data: values,
-                backgroundColor: colors
+                backgroundColor: (context: any) => {
+                  const label = labels[context.dataIndex];
+                  const ctx = context.chart.ctx;
+                  return getColor(label, ctx);
+                }
               }]
             }}
             options={{
@@ -78,7 +98,9 @@ export default function AwardsPieChart({ data, small }: Props) {
               <span
                 className="badge me-1"
                 style={{
-                  backgroundColor: colors[idx],
+                  background: (label === 'Đang phê duyệt' || label === 'Đang xét')
+                    ? 'linear-gradient(90deg, #facc15 0%, #fbbf24 100%)'
+                    : colorMap[label] || '#6c757d',
                   width: 14,
                   height: 14,
                   display: "inline-block",

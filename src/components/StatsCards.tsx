@@ -1,5 +1,9 @@
 import React from 'react';
 
+interface Contest {
+  [key: string]: string;
+}
+
 interface Props {
   data: Contest[];
 }
@@ -14,46 +18,44 @@ const CARD_COLORS = [
 const ICONS = [
   'bi-archive', // Tổng đề tài
   'bi-person-badge', // Số chủ nhiệm
-  'bi-people', // Tổng thành viên
+  'bi-gift', // Tổng giải thưởng
   'bi-award' // Đã khen thưởng
 ];
 
 const LABELS = [
   'TỔNG ĐỀ TÀI',
   'SỐ CHỦ NHIỆM',
-  'TỔNG THÀNH VIÊN',
+  'TỔNG GIẢI THƯỞNG',
   'ĐÃ KHEN THƯỞNG'
 ];
 
 export default function StatsCards({ data }: Props) {
-  // 1) Tính Tổng đề tài
+  // 1) Tổng đề tài
   const totalContests = data.length;
 
-  // 2) Tính Số chủ nhiệm duy nhất
+  // 2) Số chủ nhiệm duy nhất
   const uniqueLeaders = new Set(
-    data.map((r) => r['Chủ nhiệm'].trim())
+    data.map((r) => (r['Chủ nhiệm'] || '').trim()).filter(Boolean)
   ).size;
 
-  // 3) Tính Tổng thành viên (mỗi dòng xuống, split bởi '\n')
-  const totalMembers = data.reduce((sum, r) => {
-    return (
-      sum +
-      r['Thành viên']
-        .split('\n')
-        .map((t) => t.trim())
-        .filter((t) => t).length
-    );
+  // 3) Tổng giải thưởng (tách theo xuống dòng hoặc dấu phẩy)
+  const totalAwards = data.reduce((sum, r) => {
+    const awards = (r['Giải thưởng tham gia'] || '')
+      .split(/\n|,/)
+      .map((t) => t.trim())
+      .filter((t) => t && t !== '-');
+    return sum + awards.length;
   }, 0);
 
-  // 4) Tính Số đề tài đã khen thưởng
-  const awardedCount = data.filter((r) =>
-    /đã khen thưởng/i.test(r['Xét khen thưởng'])
+  // 4) Số đề tài đã khen thưởng
+  const awardedCount = data.filter(
+    (r) => (r['Xét khen thưởng'] || '').toLowerCase().includes('đã khen thưởng')
   ).length;
 
   const values = [
     totalContests,
     uniqueLeaders,
-    totalMembers,
+    totalAwards,
     awardedCount
   ];
 

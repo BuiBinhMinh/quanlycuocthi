@@ -1,16 +1,17 @@
 export interface Contest {
-  STT: number;
+  STT: string;
   'Tên đề tài': string;
   'Thành viên': string;
   'Chủ nhiệm': string;
   'Thời gian': string;
   'Giải thưởng tham gia': string;
+  'Đạt giải': string;
   'Xét khen thưởng': string;
   'Minh chứng': string;
 }
 
-export async function fetchContestsFromSheet(): Promise<Contest[]> {
-  const res = await fetch(process.env.SHEET_WEBAPP_URL!);
+export async function fetchContestsFromSheet(signal?: AbortSignal): Promise<Contest[]> {
+  const res = await fetch(process.env.SHEET_WEBAPP_URL!, { signal });
   if (!res.ok) {
     throw new Error(`Sheet API error: ${res.status}`);
   }

@@ -2,6 +2,7 @@ import ContestsTable from '@/components/ContestsTable';
 import StatsCards from '@/components/StatsCards';
 import TimelineBarChart from '@/components/TimelineBarChart';
 import AwardsPieChart from '@/components/AwardsPieChart';
+import AwardsTypePieChart from '@/components/AwardsTypePieChart'; // Thêm dòng này
 import { fetchContestsFromSheet } from '@/lib/googleSheet';
 
 export const revalidate = 0;
@@ -25,11 +26,20 @@ export default async function DashboardPage() {
 
       {/* Charts nhỏ lại, cùng hàng */}
       <div className="row g-4 mb-4">
-        <div className="col-md-6 col-lg-6">
+        <div className="col-md-4 col-lg-4">
+        <div className="card chart-card shadow-lg border-0 h-100 transition-hover">
           <TimelineBarChart data={contests} small />
         </div>
-        <div className="col-md-6 col-lg-6">
+        </div>
+        <div className="col-md-4 col-lg-4">
+        <div className="card chart-card shadow-lg border-0 h-100 transition-hover">
+          <AwardsTypePieChart data={contests} small />
+        </div>
+        </div>
+        <div className="col-md-4 col-lg-4">
+        <div className="card chart-card shadow-lg border-0 h-100 transition-hover">
           <AwardsPieChart data={contests} small />
+        </div>
         </div>
       </div>
 
