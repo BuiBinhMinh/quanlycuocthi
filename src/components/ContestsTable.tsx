@@ -1,6 +1,6 @@
 'use client';
 import { useState, useMemo } from 'react';
-import { Contest } from '@/lib/googleSheet';
+import type { Contest } from '@/lib/types';
 
 interface Props { data: Contest[] }
 const PAGE_SIZE = 3;

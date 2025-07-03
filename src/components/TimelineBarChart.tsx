@@ -1,5 +1,5 @@
 'use client';
-import { Contest } from '@/lib/googleSheet';
+import type { Contest } from '@/lib/types';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
