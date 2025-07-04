@@ -1,12 +1,12 @@
 'use client';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js';
-import type { Contest } from '@/lib/types';
+import type { Project } from '@/lib/types';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 interface Props {
-  data: Contest[];
+  data: Project[];
   small?: boolean;
 }
 
@@ -18,14 +18,13 @@ const AWARD_LABELS = [
 ];
 
 const AWARD_COLORS = [
-  '#FFD700', // Vàng kim
-  '#C0C0C0', // Bạc kim
-  '#CD7F32', // Đồng
-  '#4CAF50'  // Xanh ngọc
+  '#FFD700',
+  '#C0C0C0',
+  '#CD7F32',
+  '#4CAF50'
 ];
 
 export default function AwardsTypePieChart({ data, small }: Props) {
-  // Đếm số lượng từng loại giải từ cột "Đạt giải"
   const counts = [0, 0, 0, 0];
   data.forEach(r => {
     const awards = (r['Đạt giải'] || '')
@@ -72,7 +71,7 @@ export default function AwardsTypePieChart({ data, small }: Props) {
               }]
             }}
             options={{
-              indexAxis: 'y', // Bar ngang
+              indexAxis: 'y',
               plugins: { legend: { display: false } },
               maintainAspectRatio: false,
               responsive: true,

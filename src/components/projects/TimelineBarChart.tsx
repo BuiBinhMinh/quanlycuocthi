@@ -1,5 +1,5 @@
 'use client';
-import type { Contest } from '@/lib/types';
+import type { Project } from '@/lib/types';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
@@ -8,7 +8,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
-interface Props { data: Contest[]; small?: boolean }
+interface Props { data: Project[]; small?: boolean }
 
 function getYearOrMonth(time: string) {
   // Ưu tiên lấy năm, nếu có dạng MM/YYYY thì lấy luôn, nếu chỉ có năm thì lấy năm

@@ -1,11 +1,11 @@
 import React from 'react';
 
-interface Contest {
+interface Project {
   [key: string]: string;
 }
 
 interface Props {
-  data: Contest[];
+  data: Project[];
 }
 
 const CARD_COLORS = [

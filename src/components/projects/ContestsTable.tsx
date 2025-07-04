@@ -1,8 +1,8 @@
 'use client';
 import { useState, useMemo } from 'react';
-import type { Contest } from '@/lib/types';
+import type { Project } from '@/lib/types';
 
-interface Props { data: Contest[] }
+interface Props { data: Project[] }
 const PAGE_SIZE = 3;
 
 export default function ContestsTable({ data }: Props) {
@@ -15,8 +15,6 @@ export default function ContestsTable({ data }: Props) {
   );
 
   if (page > totalPage && totalPage > 0) setPage(totalPage);
-
-  // Màu nền từng dòng (theo index)
   const rowColors = [
     'table-row-blue',
     'table-row-purple',
@@ -84,7 +82,20 @@ function renderStatus(status: string) {
                 <td style={{ maxWidth: 140 }}>{r['Giải thưởng tham gia'] || ''}</td>
                 <td>{r['Đạt giải'] || ''}</td>
                 <td>{renderStatus(r['Xét khen thưởng'])}</td>
-                <td>{r['Minh chứng'] || ''}</td>
+                <td>
+  {r['Minh chứng']
+    ? (
+      <a
+        href={r['Minh chứng']}
+        target="_blank"
+        rel="noreferrer"
+        className="link-primary fw-semibold"
+      >
+        Link
+      </a>
+    )
+    : null}
+</td>
               </tr>
             ))}
           </tbody>
