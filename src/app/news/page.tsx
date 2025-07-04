@@ -6,6 +6,8 @@ import PublicationCountryPie from '@/components/news/PublicationCountryPie'
 import PublicationsTable from '@/components/news/PublicationsTable'
 import { fetchPublications } from '@/lib/googleSheet'
 
+
+export const revalidate = 60   // tái sinh lại page mỗi 60 giây
 export default async function NewsPage() {
   const publications = await fetchPublications()
 
