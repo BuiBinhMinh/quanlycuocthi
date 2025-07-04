@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import PublicationStats from '@/components/news/PublicationStats'
 import PublicationTimelineChart from '@/components/news/PublicationTimelineChart'
 import PublicationCountryPie from '@/components/news/PublicationCountryPie'
