@@ -13,8 +13,8 @@ const roboto = Roboto({
 
 const SIDEBAR_ITEMS = [
   { label: 'Dự án', icon: 'bi-speedometer2', path: '/' },
-  { label: 'Tin tức', icon: 'bi-ui-checks', path: '/news' },
-  { label: 'transfers', icon: 'bi-table', path: '/transfers' },
+  { label: 'Báo khoa học', icon: 'bi-ui-checks', path: '/news' },
+  { label: 'Chuyển giao CN', icon: 'bi-table', path: '/transfers' },
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -38,7 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }}
           >
             <div className="p-3">
-              <h4 className="sidebar-title text-center fw-bold mb-4" style={{ letterSpacing: 1 }}>AdminCAST</h4>
+              <h4 className="sidebar-title text-center fw-bold mb-4" style={{ letterSpacing: 1 }}>KHOA CNTT LHU</h4>
               <ul className="nav nav-pills flex-column gap-2">
                 {SIDEBAR_ITEMS.map(item => {
                   const isActive = item.path === '/'

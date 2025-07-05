@@ -17,9 +17,9 @@ export default async function DashboardPage() {
     <main className="container-fluid p-4">
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Dashboard</h2>
+        <h2>Quản lý dự án cuộc thi</h2>
         <div className="d-flex align-items-center">
-          <span className="me-2 text-secondary">Hoàng Gia Huy</span>
+          <span className="me-2 text-secondary">Khoa CNTT</span>
           <Image
             src="https://scontent.fsgn15-1.fna.fbcdn.net/v/t39.30808-6/480960624_675682554814151_8091216706953034584_n.jpg?stp=dst-jpg_tt6&cstp=mx1080x1080&ctp=s1080x1080&_nc_cat=110&ccb=1-7&_nc_sid=127cfc&_nc_ohc=77Np5iq6OLUQ7kNvwH7-FFY&_nc_oc=Adl68PPJYuhCS_Sui6qimqg5heBz8y6yfhX7NGwhqIYeRJ-mbgrP3m8oZ-283Vy7tzgVPKO62a1tS6w01MdVfs--&_nc_zt=23&_nc_ht=scontent.fsgn15-1.fna&_nc_gid=86E5uXjt8IF5dv9oB1fAQw&oh=00_AfMVSyGvbxuydkf1zSRtIyiNa1XKP5IOtzBDfgx_Mi2fvg&oe=6869B13F"
             alt="Avatar Hoàng Gia Huy"
