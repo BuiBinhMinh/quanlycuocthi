@@ -23,6 +23,20 @@ export type Publication = {
   'Minh chứng'?: string;
 };
 
+export type Transfer = {
+  TT: string
+  'Tên đơn vị nhận chuyển giao': string
+  'Số hợp đồng/ PO': string
+  'Ngày hợp đồng/PO': string
+  'Nội dung Hợp đồng/PO': string
+  'Giá trị hợp đồng trước thuế (đồng)': string
+  '% kinh phí đã trích về trường xuất hoá đơn VAT': string
+  'Số tiền đề nghị khen thưởng': string
+  'Minh chứng': string
+  'Tổng giá trị hợp đồng trước thuế': string
+  'Tổng Số tiền khen thưởng': string
+}
+
 export interface SheetPayload {
   projects:    Project[];
   publications: Publication[];

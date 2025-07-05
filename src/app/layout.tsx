@@ -14,7 +14,7 @@ const roboto = Roboto({
 const SIDEBAR_ITEMS = [
   { label: 'Dự án', icon: 'bi-speedometer2', path: '/' },
   { label: 'Tin tức', icon: 'bi-ui-checks', path: '/news' },
-  { label: 'Tables', icon: 'bi-table', path: '/table' },
+  { label: 'transfers', icon: 'bi-table', path: '/transfers' },
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

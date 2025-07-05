@@ -6,7 +6,7 @@ export default function GlobalLoading() {
       <div className="spinner-border text-primary me-2" role="status">
         <span className="visually-hidden">Loading...</span>
       </div>
-      <span>Đang tải dữ liệu...</span>
+      <span>Đang tải dữ liệu quản lí dự án ...</span>
     </div>
   )
 }

@@ -6,7 +6,7 @@ export default function NewsLoading() {
       <div className="spinner-border text-primary me-2" role="status">
         <span className="visually-hidden">Loading...</span>
       </div>
-      <span>Đang tải dữ liệu...</span>
+      <span>Đang tải dữ liệu Quản lý bài báo Khoa học...</span>
     </div>
   )
 }
