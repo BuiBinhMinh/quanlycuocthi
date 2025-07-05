@@ -15,7 +15,6 @@ import {
 import { Line } from 'react-chartjs-2';
 import type { Publication } from '@/lib/types';
 
-// register the required components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -33,22 +32,49 @@ interface Props {
 export default function PublicationTimelineChart({ data }: Props) {
   const chartRef = useRef<ChartJS<'line'>>(null);
 
-  // 1) group counts by year (or "Khác")
+  // 1) Gom nhóm số lượng bài báo theo năm, hỗ trợ ISO, dd/mm/yyyy, "Tháng X/YYYY",...
   const { labels, values } = useMemo(() => {
     const cnt: Record<string, number> = {};
-    data.forEach(r => {
-      const d = new Date((r['Thời gian'] || '').trim());
-      const year = isNaN(d.getTime()) ? 'Khác' : String(d.getFullYear());
-      cnt[year] = (cnt[year] || 0) + 1;
+
+    data.forEach((r) => {
+      const raw = (r['Thời gian'] || '').trim();
+      let year: string | null = null;
+
+      // ISO yyyy-mm-dd
+      if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+        const d = new Date(raw);
+        if (!isNaN(d.getTime())) year = String(d.getFullYear());
+      }
+      // dd/mm/yyyy
+      else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(raw)) {
+        const parts = raw.split('/');
+        year = parts[2];
+      }
+      if (!year) {
+        const m = raw.match(/(\d{4})/);
+        if (m) year = m[1];
+      }
+      if (!year) {
+        const d2 = new Date(raw);
+        if (!isNaN(d2.getTime())) year = String(d2.getFullYear());
+      }
+
+      const key = year ?? 'Khác';
+      cnt[key] = (cnt[key] || 0) + 1;
     });
-    const years = Object.keys(cnt)
-      .filter(y => y !== 'Khác')
+
+    const yrs = Object.keys(cnt)
+      .filter((y) => y !== 'Khác')
       .sort((a, b) => Number(a) - Number(b));
-    if (cnt['Khác']) years.push('Khác');
-    return { labels: years, values: years.map(y => cnt[y]) };
+    if (cnt['Khác']) yrs.push('Khác');
+
+    return {
+      labels: yrs,
+      values: yrs.map((y) => cnt[y]),
+    };
   }, [data]);
 
-  // 2) apply a nice gradient fill under the line
+  // 2) Vẽ gradient dưới đường line
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
@@ -60,7 +86,7 @@ export default function PublicationTimelineChart({ data }: Props) {
     chart.update();
   }, [labels, values]);
 
-  // 3) configure options (no explicit border-hiding)
+  // 3) Cấu hình biểu đồ
   const options: ChartOptions<'line'> = {
     maintainAspectRatio: false,
     plugins: {
@@ -78,16 +104,22 @@ export default function PublicationTimelineChart({ data }: Props) {
       x: {
         grid: { display: false },
         ticks: { color: '#555', maxRotation: 0, autoSkip: true },
+        title: {
+          display: true,
+          text: 'Năm',
+          color: '#333',
+          font: { size: 14, weight: 500 },
+        },
       },
       y: {
         beginAtZero: true,
-        grid: {
-          color: 'rgba(200,200,200,0.1)',
-          // we simply leave the default border here
-        },
-        ticks: {
-          stepSize: 1,
-          color: '#555',
+        grid: { color: 'rgba(200,200,200,0.1)' },
+        ticks: { stepSize: 1, color: '#555' },
+        title: {
+          display: true,
+          text: 'Số bài báo',
+          color: '#333',
+          font: { size: 14, weight: 500 },
         },
       },
     },
