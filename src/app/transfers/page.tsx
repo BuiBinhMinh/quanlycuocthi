@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import React from 'react'
 import TransferTimelineChart from '@/components/transfers/TransferTimelineChart'
 import TransferValueBarChart from '@/components/transfers/ContractRewardGauge'

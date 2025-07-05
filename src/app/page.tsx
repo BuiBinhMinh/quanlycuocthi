@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import ContestsTable from '@/components/projects/ContestsTable';
 import StatsCards from '@/components/projects/StatsCards';
 import TimelineBarChart from '@/components/projects/TimelineBarChart';
