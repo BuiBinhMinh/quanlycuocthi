@@ -40,3 +40,38 @@ a {
     color-scheme: dark;
   }
 }
+
+/* Marker custom tooltip */
+.today-marker {
+  position: absolute;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background-color: #ffdd57;
+  transform: translateX(-50%);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* Tooltip box */
+.today-marker::after {
+  content: attr(data-title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px);
+  white-space: nowrap;
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity .2s;
+  pointer-events: none;
+}
+
+/* Khi hover marker, show tooltip */
+.today-marker:hover::after {
+  opacity: 1;
+}

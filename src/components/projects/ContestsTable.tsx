@@ -39,7 +39,7 @@ function renderStatus(status: string) {
       </span>
     );
   }
-  if (s.includes('chưa khen thưởng')) return <span className="badge badge-modern bg-danger">Chưa khen thưởng</span>;
+  if (s.includes('chưa xét')) return <span className="badge badge-modern bg-danger">Chưa xét</span>;
   return <span className="badge badge-modern bg-secondary">{status || 'Không rõ'}</span>;
 }
 

@@ -37,7 +37,20 @@ export type Transfer = {
   'Tổng Số tiền khen thưởng': string
 }
 
+export type TimeManagement = {
+  STT: string;
+  'Tên cuộc thi': string;
+  'Giảng Viên': string;
+  'Thành viên': string;
+  'Thời gian bắt đầu': string;
+  'Hạn cuối nộp bài': string;
+  'Thông tin nộp bài': string;
+  'Link cuộc thi': string;
+};
+
 export interface SheetPayload {
-  projects:    Project[];
-  publications: Publication[];
+  projects:      Project[];
+  publications:  Publication[];
+  transfers:     Transfer[];
+  timemanagement: TimeManagement[];
 }

@@ -1,4 +1,6 @@
+// src/components/news/AwardsPieChart.tsx
 'use client';
+
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, ScriptableContext } from 'chart.js';
 import type { Project } from '@/lib/types';
@@ -20,22 +22,27 @@ export default function AwardsPieChart({ data, small }: Props) {
 
   const labels = Object.keys(counts);
   const values = labels.map(l => counts[l]);
-  const colorMap: Record<string, string> = {
+
+  // Màu mặc định cho các trạng thái không phải gradient/đỏ
+  const defaultColors: Record<string, string> = {
     'Đã khen thưởng': '#198754',
-    'Đang phê duyệt': 'gradient-yellow',
-    'Đang xét': 'gradient-yellow',
-    'Chưa khen thưởng': '#dc3545',
-    'Không rõ': '#6c757d'
+    'Không rõ':       '#6c757d'
   };
 
   function getColor(label: string, ctx: CanvasRenderingContext2D) {
-    if (label === 'Đang phê duyệt' || label === 'Đang xét') {
-      const gradient = ctx.createLinearGradient(0, 0, 120, 0);
-      gradient.addColorStop(0, '#facc15');
-      gradient.addColorStop(1, '#fbbf24');
-      return gradient;
+    // 1. Nếu chứa "Chưa" -> đỏ
+    if (/chưa/i.test(label)) {
+      return '#dc3545';
     }
-    return colorMap[label] || '#6c757d';
+    // 2. Nếu đang xét/phê duyệt -> gradient vàng
+    if (/đang phê duyệt|đang xét/i.test(label)) {
+      const grad = ctx.createLinearGradient(0, 0, 120, 0);
+      grad.addColorStop(0, '#facc15');
+      grad.addColorStop(1, '#fbbf24');
+      return grad;
+    }
+    // 3. Các trạng thái khác
+    return defaultColors[label] || defaultColors['Không rõ'];
   }
 
   // Responsive height
@@ -90,26 +97,34 @@ export default function AwardsPieChart({ data, small }: Props) {
             flexWrap: 'wrap'
           }}
         >
-          {labels.map((label, idx) => (
-            <span key={label} className="d-flex align-items-center mb-1">
-              <span
-                className="badge me-1"
-                style={{
-                  background: (label === 'Đang phê duyệt' || label === 'Đang xét')
-                    ? 'linear-gradient(90deg, #facc15 0%, #fbbf24 100%)'
-                    : colorMap[label] || '#6c757d',
-                  width: 14,
-                  height: 14,
-                  display: "inline-block",
-                  borderRadius: 3,
-                  marginRight: 6
-                }}
-              >
-                &nbsp;
+          {labels.map((label, idx) => {
+            // Xác định màu badge giống getColor (không gradient)
+            let badgeColor = '#6c757d';
+            if (/chưa/i.test(label)) badgeColor = '#dc3545';
+            else if (/đang phê duyệt|đang xét/i.test(label)) badgeColor = 'linear-gradient(90deg, #facc15 0%, #fbbf24 100%)';
+            else badgeColor = defaultColors[label] || defaultColors['Không rõ'];
+
+            return (
+              <span key={label} className="d-flex align-items-center mb-1">
+                <span
+                  className="badge me-1"
+                  style={{
+                    background: badgeColor,
+                    width: 14,
+                    height: 14,
+                    display: "inline-block",
+                    borderRadius: 3,
+                    marginRight: 6
+                  }}
+                >
+                  &nbsp;
+                </span>
+                <span style={{ whiteSpace: 'nowrap' }}>
+                  {label} <b>{values[idx]}</b>
+                </span>
               </span>
-              <span style={{ whiteSpace: 'nowrap' }}>{label} <b>{values[idx]}</b></span>
-            </span>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import type { Project, Publication, Transfer } from './types'
+import type { Project, Publication, Transfer, TimeManagement, SheetPayload } from './types'
 
 const BASE = process.env.SHEET_WEBAPP_URL!
 if (!BASE) throw new Error('Thiếu SHEET_WEBAPP_URL')
@@ -21,17 +21,18 @@ export function fetchPublications(signal?: AbortSignal) {
   return fetchSheet<Publication>('Bài báo Khoa học', signal)
 }
 
-// ---- CẬP NHẬT CHO TRANSFER ----
 export function fetchTransfers(signal?: AbortSignal) {
   return fetchSheet<Transfer>('Chuyển giao công nghệ', signal)
 }
 
-export async function fetchAll(signal?: AbortSignal): Promise<{
-  projects: Project[]
-  publications: Publication[]
-  transfers: Transfer[]
-}> {
+// ---- Hàm mới cho "Quản lý thời gian" ----
+export function fetchTimeManagement(signal?: AbortSignal) {
+  return fetchSheet<TimeManagement>('Quản lý thời gian', signal)
+}
+
+// ---- fetchAll trả về 4 sheet ----
+export async function fetchAll(signal?: AbortSignal): Promise<SheetPayload> {
   const res = await fetch(BASE, { signal })
   if (!res.ok) throw new Error(`Sheet API error ${res.status}`)
-  return res.json()
+  return res.json() as Promise<SheetPayload>
 }
