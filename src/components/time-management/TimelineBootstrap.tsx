@@ -1,27 +1,29 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// src/components/time-management/TimelineBootstrap.tsx
 'use client'
 
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
-import { useState } from 'react'
-import { Bar } from 'react-chartjs-2'
+import { Pie, Bar } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
+  ArcElement,
   Title,
   Tooltip as ChartTooltip,
   Legend,
-  TooltipItem,
+  type ChartOptions,
+  type ChartData
 } from 'chart.js'
 
+// Extend dayjs parsing
 dayjs.extend(customParseFormat)
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ChartTooltip, Legend)
+ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, ChartTooltip, Legend)
 
 interface TimeManagement {
   'Tên cuộc thi'?: string
+  'Giảng Viên'?: string
   'Thời gian bắt đầu'?: string
   'Hạn cuối nộp bài'?: string
 }
@@ -31,268 +33,243 @@ interface Props {
 }
 
 export default function TimelineBootstrap({ items }: Props) {
-  const today    = dayjs()
+  const today = dayjs()
   const todayStr = today.format('DD/MM/YYYY')
   const weekday  = today.format('dddd')
 
-  // Khai báo mutable array để tránh lỗi readonly
-  const DATE_FORMATS: string[] = ['D/M/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD', 'YYYY/MM/DD']
+  // helper parse: định dạng nằm trong callback, không cần deps
+  const parseDate = useCallback((str?: string) =>
+    dayjs(str || '', ['D/M/YYYY','DD/MM/YYYY','YYYY-MM-DD','YYYY/MM/DD'], true)
+  , [])
 
-  const [upcomingPage,   setUpcomingPage]   = useState(1)
-  const [ongoingPage,    setOngoingPage]    = useState(1)
-  const [completedPage,  setCompletedPage]  = useState(1)
-  const itemsPerPage = 3
-
-  // Chuẩn hóa & tính toán
-  const data = items.map(it => {
-    const parse = (s: string) => dayjs(s, DATE_FORMATS, true)
-    const start = parse(it['Thời gian bắt đầu'] || '')
-    const end   = parse(it['Hạn cuối nộp bài']   || '')
-    const ok    = start.isValid() && end.isValid()
-
-    let status: 'upcoming'|'ongoing'|'completed'|'invalid' = 'invalid'
-    let daysUntilStart = NaN
-    let daysLeft       = NaN
-    let daysSinceEnd   = NaN
-    let pct            = 0
-
-    if (ok) {
-      if (today.isBefore(start)) {
-        status = 'upcoming'
-        daysUntilStart = start.diff(today,'day')
-      } else if (today.isAfter(end)) {
-        status = 'completed'
-        daysSinceEnd = today.diff(end,'day')
-        pct = 100
-      } else {
-        status = 'ongoing'
-        const total   = Math.max(end.diff(start,'day'),1)
-        const elapsed = today.diff(start,'day')
-        pct       = Math.round((elapsed/total)*100)
-        daysLeft  = end.diff(today,'day')
-      }
-    }
+  // enrich items
+  const enriched = useMemo(() => items.map(it => {
+    const start = parseDate(it['Thời gian bắt đầu'])
+    const end   = parseDate(it['Hạn cuối nộp bài'])
+    const valid = start.isValid() && end.isValid()
+    const isCompleted = valid && end.isBefore(today,'day')
+    const isOngoing   = valid && !isCompleted
+      && (today.isSame(start,'day')||today.isAfter(start,'day'))
+      && (today.isSame(end,'day')  ||today.isBefore(end,'day'))
+    const isUpcoming = valid && today.isBefore(start,'day')
+    const daysToEnd  = valid ? Math.max(end.diff(today,'day'),0) : NaN
+    const expiringSoon = isOngoing && daysToEnd <= 7
 
     return {
-      title: it['Tên cuộc thi'] || '—',
-      start: ok ? start.format('DD/MM/YYYY') : '—',
-      end:   ok ? end  .format('DD/MM/YYYY') : '—',
-      status,
-      daysUntilStart,
-      daysLeft,
-      daysSinceEnd,
-      pct
+      ...it,
+      startStr: start.format('DD/MM/YYYY'),
+      endStr:   end.format('DD/MM/YYYY'),
+      isCompleted, isOngoing, isUpcoming, daysToEnd, expiringSoon
     }
-  })
+  }), [items, today, parseDate])
 
-  const upcoming  = data.filter(x => x.status === 'upcoming')
-  const ongoing   = data.filter(x => x.status === 'ongoing')
-  const completed = data.filter(x => x.status === 'completed')
+  // counts
+  const totalCompleted = enriched.filter(i=>i.isCompleted).length
+  const totalOngoing   = enriched.filter(i=>i.isOngoing).length
+  const totalUpcoming  = enriched.filter(i=>i.isUpcoming).length
+  const expiringSoon   = enriched.filter(i=>i.expiringSoon).length
 
-  // Cấu hình biểu đồ
-  const chartData = {
-    labels: ['Sắp diễn ra','Đang diễn ra','Đã hoàn thành'],
-    datasets: [{
-      label: 'Số lượng cuộc thi',
-      data: [upcoming.length, ongoing.length, completed.length],
-      backgroundColor: ['#ffc107','#17a2b8','#28a745'],
-      borderColor:     ['#e0a800','#138496','#218838'],
-      borderWidth: 1
+  // lecturer counts
+  const lecturerCounts = useMemo(() => {
+    return enriched.reduce<Record<string,number>>((acc,i)=>{
+      const l = i['Giảng Viên']||'—'
+      acc[l] = (acc[l]||0)+1
+      return acc
+    }, {})
+  }, [enriched])
+  const sortedLecturers = Object.entries(lecturerCounts).sort(([,a],[,b])=>b-a)
+
+  // selected panel + pagination
+  const [selected,setSelected] = useState<string|'EXPIRING'|null>(null)
+  const [page,setPage] = useState(1)
+  const pageSize = 4
+  useEffect(()=>{ setPage(1) },[selected])
+
+  // --- Pie ---
+  const pieData = useMemo<ChartData<'pie'>>(() => ({
+    labels:['Hoàn thành','Đang diễn ra','Sắp diễn ra'],
+    datasets:[{
+      data:[totalCompleted,totalOngoing,totalUpcoming],
+      backgroundColor:['#00AA47','#17A2B8','#FFC107'],
+      hoverOffset:6
     }]
-  }
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      title:  { display: true, text: 'Tổng quan', font: { size: 16 } },
-      tooltip: {
-        callbacks: {
-          label: (ctx: TooltipItem<'bar'>) =>
-            `${ctx.dataset.label}: ${ctx.parsed.y}`
-        }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks:        { stepSize: 1, font: { size: 14 } },
-        title:        { display: true, text: 'Số cuộc thi', font: { size: 14 } }
-      },
-      x: {
-        ticks: { font: { size: 14 } }
-      }
+  }),[totalCompleted,totalOngoing,totalUpcoming])
+
+  const pieOpts: ChartOptions<'pie'> = {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{ position:'bottom' },
+      title:{ display:true, text:'Tình trạng cuộc thi', font:{ size:16, weight:600 } }
     }
   }
 
-  // Phân trang
-  const paginate = (arr: typeof data, page: number) =>
-    arr.slice((page - 1) * itemsPerPage, page * itemsPerPage)
-  const totalPages = (arr: any[]) => Math.ceil(arr.length / itemsPerPage)
+  // --- Bar: Khởi động 2025 ---
+  const monthCounts = useMemo(()=> {
+    const acc:Record<string,number> = {}
+    enriched.forEach(i=>{
+      const key = parseDate(i['Thời gian bắt đầu']).format('YYYY-MM')
+      if (key.startsWith('2025')) acc[key] = (acc[key]||0)+1
+    })
+    return acc
+  },[enriched, parseDate])
+  const monthLabels = useMemo(() => Object.keys(monthCounts).sort(), [monthCounts])
+
+  const barMonthData = useMemo<ChartData<'bar'>>(() => ({
+    labels:monthLabels,
+    datasets:[{
+      label:'Số cuộc thi',
+      data:monthLabels.map(m=>monthCounts[m]),
+      backgroundColor:'#1a73e8',
+      borderRadius:4,
+      maxBarThickness:36
+    }]
+  }),[monthCounts, monthLabels])
+
+  const barMonthOpts: ChartOptions<'bar'> = {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{ display:false },
+      title:{ display:true, text:'Khởi động 2025', font:{ size:16, weight:600 } }
+    },
+    scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } }
+  }
 
   return (
-    <div className="container my-4">
-      {/* Header Hôm nay */}
+    <div className="w-100 p-4 bg-white rounded">
+
+      {/* Header */}
       <div className="text-center mb-4">
-        <h2 className="fs-4 fw-bold text-primary">Hôm nay: {todayStr}</h2>
-        <p className="text-muted small">{weekday}</p>
+        <h4 className="text-primary mb-1">Hôm nay: {todayStr}</h4>
+        <small className="text-muted">{weekday}</small>
       </div>
 
+      {/* Stat Cards */}
+      <div className="row g-4 mb-4">
+        <StatCard icon="people-fill" label="Tổng diễn ra" value={totalOngoing}
+          onClick={()=>setSelected(null)} />
+        <StatCard icon="exclamation-circle-fill" color="danger"
+          label="Sắp hết hạn" sub="trong 7 ngày" value={expiringSoon}
+          onClick={()=>setSelected(selected==='EXPIRING'?null:'EXPIRING')} />
+        <div className="col-md-4">
+          <div className="card shadow-sm border-0 h-100">
+            <div className="card-body p-3">
+              <h6 className="text-uppercase text-muted mb-2">Giảng viên & số cuộc thi</h6>
+              <ul className="list-unstyled mb-0">
+                {sortedLecturers.map(([l,c])=>(
+                  <li key={l}
+                      className="d-flex justify-content-between align-items-center py-1"
+                      style={{cursor:'pointer'}}
+                      onClick={()=>setSelected(selected===l?null:l)}>
+                    <span>{l}</span>
+                    <span className="badge bg-secondary rounded-pill">{c}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Detail Panels */}
+      {selected==='EXPIRING' && (
+        <DetailPanel title="Cuộc thi sắp hết hạn">
+          {enriched.filter(i=>i.expiringSoon).map((i,idx)=>(
+            <PanelRow key={idx}
+              title={i['Tên cuộc thi']!}
+              subtitle={`Hạn: ${i.endStr}`}
+              badge={{text:`Còn ${i.daysToEnd} ngày`, color:'warning'}} />
+          ))}
+        </DetailPanel>
+      )}
+
+      {selected && selected!=='EXPIRING' && (
+        <DetailPanel title={`Cuộc thi của ${selected}`}>
+          {enriched.filter(i=>i['Giảng Viên']===selected)
+            .slice((page-1)*pageSize, page*pageSize)
+            .map((i,idx)=>(
+              <PanelRow key={idx}
+                title={i['Tên cuộc thi']!}
+                subtitle={`${i.startStr} – ${i.endStr}`}
+                badge={i.isCompleted
+                  ? {text:'Hoàn thành', color:'success'}
+                  : {text:`Còn ${i.daysToEnd} ngày`, color:'warning'}}/>
+            ))
+          }
+          <div className="d-flex justify-content-center align-items-center mt-3">
+            <button className="btn btn-outline-primary btn-sm me-2"
+              disabled={page===1} onClick={()=>setPage(p=>p-1)}>←</button>
+            <span>Trang {page} / {Math.ceil(enriched.filter(i=>i['Giảng Viên']===selected).length/pageSize)}</span>
+            <button className="btn btn-outline-primary btn-sm ms-2"
+              disabled={page >= Math.ceil(enriched.filter(i=>i['Giảng Viên']===selected).length/pageSize)}
+              onClick={()=>setPage(p=>p+1)}>→</button>
+          </div>
+        </DetailPanel>
+      )}
+
+      {/* Charts */}
       <div className="row g-4">
-        {/* Chart cột trái */}
         <div className="col-md-6">
-          <div className="card shadow-sm h-100">
-            <div className="card-body p-3 d-flex flex-column">
-              <div className="flex-grow-1" style={{ height: '300px' }}>
-                <Bar data={chartData} options={chartOptions} />
-              </div>
+          <div className="card shadow-sm border-0 h-100">
+            <div className="card-body p-2" style={{ height: 300 }}>
+              <Pie data={pieData} options={pieOpts} />
             </div>
           </div>
         </div>
-
-        {/* Danh sách sự kiện cột phải */}
         <div className="col-md-6">
-          <div className="card shadow-sm h-100">
-            <div className="card-body p-3 d-flex flex-column">
-              {/* Upcoming */}
-              {upcoming.length > 0 && (
-                <section className="mb-4 flex-grow-1">
-                  <h3 className="h5 mb-2 text-warning">
-                    Sắp diễn ra ({upcoming.length})
-                  </h3>
-                  <div className="row g-2">
-                    {paginate(upcoming, upcomingPage).map((it, idx) => (
-                      <div key={idx} className="col-12">
-                        <div className="card shadow-sm border-warning">
-                          <div className="card-body p-2">
-                            <h5 className="fs-6 mb-1">{it.title}</h5>
-                            <p className="small mb-1">
-                              <i className="bi bi-calendar-event me-1" />
-                              {it.start} - {it.end}
-                            </p>
-                            <p className="text-warning small mb-0">
-                              <i className="bi bi-hourglass-split me-1" />
-                              Bắt đầu sau {it.daysUntilStart} ngày
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {totalPages(upcoming) > 1 && (
-                    <nav className="mt-2">
-                      <ul className="pagination pagination-sm justify-content-center">
-                        {Array.from({ length: totalPages(upcoming) }, (_, i) => i + 1).map(p => (
-                          <li key={p} className={`page-item${upcomingPage === p ? ' active' : ''}`}>
-                            <button className="page-link" onClick={() => setUpcomingPage(p)}>
-                              {p}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    </nav>
-                  )}
-                </section>
-              )}
-
-              {/* Ongoing */}
-              {ongoing.length > 0 && (
-                <section className="mb-4 flex-grow-1">
-                  <h3 className="h5 mb-2 text-info">
-                    Đang diễn ra ({ongoing.length})
-                  </h3>
-                  <div className="row g-2">
-                    {paginate(ongoing, ongoingPage).map((it, idx) => (
-                      <div key={idx} className="col-12">
-                        <div className="card shadow-sm border-info">
-                          <div className="card-body p-2">
-                            <h5 className="fs-6 mb-1">{it.title}</h5>
-                            <p className="small mb-1">
-                              <i className="bi bi-calendar-event me-1" />
-                              {it.start} - {it.end}
-                            </p>
-                            <div className="progress mb-1" style={{ height: '12px' }}>
-                              <div
-                                className="progress-bar bg-info"
-                                role="progressbar"
-                                style={{ width: `${it.pct}%` }}
-                                aria-valuenow={it.pct}
-                                aria-valuemin={0}
-                                aria-valuemax={100}
-                              >
-                                <span className="small">{it.pct}%</span>
-                              </div>
-                            </div>
-                            <p className="text-info small mb-0">
-                              <i className="bi bi-clock me-1" />
-                              Còn {it.daysLeft} ngày
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {totalPages(ongoing) > 1 && (
-                    <nav className="mt-2">
-                      <ul className="pagination pagination-sm justify-content-center">
-                        {Array.from({ length: totalPages(ongoing) }, (_, i) => i + 1).map(p => (
-                          <li key={p} className={`page-item${ongoingPage === p ? ' active' : ''}`}>
-                            <button className="page-link" onClick={() => setOngoingPage(p)}>
-                              {p}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    </nav>
-                  )}
-                </section>
-              )}
-
-              {/* Completed */}
-              {completed.length > 0 && (
-                <section className="flex-grow-1">
-                  <h3 className="h5 mb-2 text-success">
-                    Đã hoàn thành ({completed.length})
-                  </h3>
-                  <div className="row g-2">
-                    {paginate(completed, completedPage).map((it, idx) => (
-                      <div key={idx} className="col-12">
-                        <div className="card shadow-sm border-success">
-                          <div className="card-body p-2">
-                            <h5 className="fs-6 mb-1">{it.title}</h5>
-                            <p className="small mb-1">
-                              <i className="bi bi-calendar-event me-1" />
-                              {it.start} - {it.end}
-                            </p>
-                            <p className="text-success small mb-0">
-                              <i className="bi bi-check-circle me-1" />
-                              Hoàn thành {it.daysSinceEnd} ngày trước
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {totalPages(completed) > 1 && (
-                    <nav className="mt-2">
-                      <ul className="pagination pagination-sm justify-content-center">
-                        {Array.from({ length: totalPages(completed) }, (_, i) => i + 1).map(p => (
-                          <li key={p} className={`page-item${completedPage === p ? ' active' : ''}`}>
-                            <button className="page-link" onClick={() => setCompletedPage(p)}>
-                              {p}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    </nav>
-                  )}
-                </section>
-              )}
-
+          <div className="card shadow-sm border-0 h-100">
+            <div className="card-body p-2" style={{ height: 300 }}>
+              <Bar data={barMonthData} options={barMonthOpts} />
             </div>
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+// --- Sub‑components ---
+
+function StatCard({ icon, color='primary', label, value, sub, onClick }:
+  { icon:string, color?:string, label:string, value:number, sub?:string, onClick?:()=>void }) {
+  return (
+    <div className="col-md-4">
+      <div className="card shadow-sm border-0 h-100" onClick={onClick}
+           style={{cursor:onClick?'pointer':'default'}}>
+        <div className="card-body d-flex align-items-center p-3">
+          <i className={`bi bi-${icon} text-${color} fs-3 me-3`} />
+          <div>
+            <small className="text-uppercase text-muted">{label}</small>
+            <div className="h5 mb-0">{value}</div>
+            {sub && <small className="text-muted d-block">{sub}</small>}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DetailPanel({ title, children }: { title:string, children:React.ReactNode }) {
+  return (
+    <div className="row mb-4">
+      <div className="col-12">
+        <div className="card shadow-sm border-0">
+          <div className="card-body p-3">
+            <h6 className="text-uppercase text-muted mb-3">{title}</h6>
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PanelRow({ title, subtitle, badge }:
+  { title:string, subtitle:string, badge:{ text:string, color:'success'|'warning' } }) {
+  return (
+    <div className="mb-2 p-2 border rounded">
+      <div className="fw-semibold">{title}</div>
+      <small className="text-muted d-block">{subtitle}</small>
+      <span className={`badge bg-${badge.color} mt-1`}>{badge.text}</span>
     </div>
   )
 }
